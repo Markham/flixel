@@ -11,7 +11,7 @@ package org.flixel.data
 	 * This panel is automatically created by <code>FlxGame</code> and you
 	 * can toggle the visibility via <code>FlxG</code>.
 	 */
-	public class FlxPanel extends FlxCore
+	public class FlxPanel extends FlxLayer
 	{
 		[Embed(source="donate.png")] private var ImgDonate:Class;
 		[Embed(source="stumble.png")] private var ImgStumble:Class;
@@ -79,11 +79,7 @@ package org.flixel.data
 		 * @private
 		 */
 		protected var _gameURL:String;
-		
-		/**
-		 * @private
-		 */
-		protected var _initialized:Boolean;
+
 		/**
 		 * @private
 		 */
@@ -107,48 +103,48 @@ package org.flixel.data
 			y = -21;
 			_ty = y;
 			_closed = false;
-			_initialized = false;
-			_topBar = new FlxSprite();
+			visible = false;
+			add(_topBar = new FlxSprite());
 			_topBar.createGraphic(FlxG.width,1,0x7fffffff);
 			_topBar.scrollFactor.x = 0;
 			_topBar.scrollFactor.y = 0;
-			_mainBar = new FlxSprite();
+			add(_mainBar = new FlxSprite());
 			_mainBar.createGraphic(FlxG.width,19,0x7f000000);
 			_mainBar.scrollFactor.x = 0;
 			_mainBar.scrollFactor.y = 0;
-			_bottomBar = new FlxSprite();
+			add(_bottomBar = new FlxSprite());
 			_bottomBar.createGraphic(FlxG.width,1,0x7fffffff);
 			_bottomBar.scrollFactor.x = 0;
 			_bottomBar.scrollFactor.y = 0;
-			_donate = new FlxButton(3,0,onDonate);
+			add(_donate = new FlxButton(3,0,onDonate));
 			_donate.loadGraphic(new FlxSprite(0,0,ImgDonate));
 			_donate.scrollFactor.x = 0;
 			_donate.scrollFactor.y = 0;
-			_stumble = new FlxButton(FlxG.width/2-6-13-6-13-6,0,onStumble);
+			add(_stumble = new FlxButton(FlxG.width/2-6-13-6-13-6,0,onStumble));
 			_stumble.loadGraphic(new FlxSprite(0,0,ImgStumble));
 			_stumble.scrollFactor.x = 0;
 			_stumble.scrollFactor.y = 0;
-			_digg = new FlxButton(FlxG.width/2-6-13-6,0,onDigg);
+			add(_digg = new FlxButton(FlxG.width/2-6-13-6,0,onDigg));
 			_digg.loadGraphic(new FlxSprite(0,0,ImgDigg));
 			_digg.scrollFactor.x = 0;
 			_digg.scrollFactor.y = 0;
-			_reddit = new FlxButton(FlxG.width/2-6,0,onReddit);
+			add(_reddit = new FlxButton(FlxG.width/2-6,0,onReddit));
 			_reddit.loadGraphic(new FlxSprite(0,0,ImgReddit));
 			_reddit.scrollFactor.x = 0;
 			_reddit.scrollFactor.y = 0;
-			_delicious = new FlxButton(FlxG.width/2+7+6,0,onDelicious);
+			add(_delicious = new FlxButton(FlxG.width/2+7+6,0,onDelicious));
 			_delicious.loadGraphic(new FlxSprite(0,0,ImgDelicious));
 			_delicious.scrollFactor.x = 0;
 			_delicious.scrollFactor.y = 0;
-			_twitter = new FlxButton(FlxG.width/2+7+6+12+6,0,onTwitter);
+			add(_twitter = new FlxButton(FlxG.width/2+7+6+12+6,0,onTwitter));
 			_twitter.loadGraphic(new FlxSprite(0,0,ImgTwitter));
 			_twitter.scrollFactor.x = 0;
 			_twitter.scrollFactor.y = 0;
-			_caption = new FlxText(FlxG.width/2,0,FlxG.width/2-19,"");
+			add(_caption = new FlxText(FlxG.width/2,0,FlxG.width/2-19,""));
 			_caption.alignment = "right";
 			_caption.scrollFactor.x = 0;
 			_caption.scrollFactor.y = 0;
-			_close = new FlxButton(FlxG.width-16,0,onClose);
+			add(_close = new FlxButton(FlxG.width-16,0,onClose));
 			_close.loadGraphic(new FlxSprite(0,0,ImgClose));
 			_close.scrollFactor.x = 0;
 			_close.scrollFactor.y = 0;
@@ -174,7 +170,7 @@ package org.flixel.data
 			_gameTitle = GameTitle;
 			_gameURL = GameURL;
 			_caption.text = Caption;
-			_initialized = true;
+			visible = true;
 		}
 		
 		/**
@@ -182,7 +178,7 @@ package org.flixel.data
 		 */
 		override public function update():void
 		{
-			if(!_initialized) return;
+			if(!visible) return;
 			if(_ty != y)
 			{
 				if(y < _ty)
@@ -219,32 +215,13 @@ package org.flixel.data
 		}
 		
 		/**
-		 * Actually draws the bar to the screen.
-		 */
-		override public function render():void
-		{
-			if(!_initialized) return;
-			if(_topBar.visible) _topBar.render();
-			if(_mainBar.visible) _mainBar.render();
-			if(_bottomBar.visible) _bottomBar.render();
-			if(_donate.visible) _donate.render();
-			if(_stumble.visible) _stumble.render();
-			if(_digg.visible) _digg.render();
-			if(_reddit.visible) _reddit.render();
-			if(_delicious.visible) _delicious.render();
-			if(_twitter.visible) _twitter.render();
-			if(_caption.visible) _caption.render();
-			if(_close.visible) _close.render();
-		}
-		
-		/**
 		 * Show the support panel.
 		 * 
 		 * @param	Top		Whether the visor should appear at the top or bottom of the screen.
 		 */
 		public function show(Top:Boolean=true):void
 		{
-			if(!_initialized)
+			if(!visible)
 			{
 				FlxG.log("SUPPORT PANEL ERROR: Uninitialized.\nYou forgot to call FlxGame.setupSupportPanel()\nfrom your game constructor.");
 				return;

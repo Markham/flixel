@@ -2,6 +2,7 @@ package org.flixel
 {
 	import flash.display.BitmapData;
 	import flash.geom.Rectangle;
+	import flash.geom.Point;
 	import flash.text.TextField;
 	import flash.text.TextFormat;
 	
@@ -16,6 +17,11 @@ package org.flixel
 	{
 		protected var _tf:TextField;
 		protected var _regen:Boolean;
+		
+		//italics variables
+		protected var _i:Number;
+		protected var _iHeight:uint;
+		protected var _iOrgin:Number;
 		
 		/**
 		 * Creates a new <code>FlxText</code> object at the specified position.
@@ -71,6 +77,21 @@ package org.flixel
 		}
 		
 		/**
+		* Sets the italics settings
+		* 
+		* @param	Strength	If Height == 0: The height-to-width ratio of the italics slant.   If Height > 0: The number of pixels offset per height section.
+		* @param	Height	If greater than 0, the italics mode is blocky and pixelated instead of anti-aliased.  Height determines how big the blocks are.
+		* @param	yOrgin	The point on the y-axis that remains unshifted. -1 = top, 0 = middle. 1 = bottom.
+		*/
+		public function setItalics(Strength:Number=0, Height:uint=0, yOrgin:Number=0)
+		{
+			_i = Strength;
+			_iHeight = Height;
+			_iOrgin = (yOrgin+1)/2;
+			calcFrame();
+		}
+		
+		/**
 		 * The text being displayed.
 		 */
 		public function get text():String
@@ -91,7 +112,7 @@ package org.flixel
 		/**
 		 * The size of the text being displayed.
 		 */
-		 public function get size():Number
+		public function get size():Number
 		{
 			return _tf.defaultTextFormat.size as Number;
 		}
@@ -187,7 +208,27 @@ package org.flixel
 				_tf.setTextFormat(new TextFormat(tf.font,tf.size,tf.color,null,null,null,null,null,"left"));				
 				_mtx.translate(Math.floor((width - _tf.getLineMetrics(0).width)/2),0);
 			}
-			_framePixels.draw(_tf,_mtx,_ct);	//Actually draw the text onto the buffer
+			// italics mod
+			if (_i != 0) {
+				if (_iHeight > 0) {
+					var recList:Array = new Array();
+					for (i = 2; i < height; i += _iHeight) {
+						recList.push(new Rectangle(0,i,width,_iHeight));
+					}
+					_framePixels.draw(_tf,_mtx,_ct);
+					var tempPixels:BitmapData = new BitmapData(width,height,true,0);
+					var rl = recList.length;
+					for (i = 0; i < rl; i++) {
+						tempPixels.copyPixels(_framePixels,recList[i],new Point(i*_i+Math.floor(height*_iOrgin*((_i^(_i>>31))-(_i>>31))/_iHeight),i*_iHeight));
+					}
+					_framePixels = tempPixels;
+				} else {
+					_mtx.c = Math.tan(_i);
+					_framePixels.draw(_tf,_mtx,_ct);
+				}
+			} else
+				_framePixels.draw(_tf,_mtx,_ct);	//Actually draw the text onto the buffer
+			// end italics mod
 			_tf.setTextFormat(new TextFormat(tf.font,tf.size,tf.color,null,null,null,null,null,tf.align));
 		}
 		

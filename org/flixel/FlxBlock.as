@@ -1,6 +1,7 @@
 package org.flixel
 {
 	import flash.display.BitmapData;
+	import flash.geom.ColorTransform;
 	import flash.geom.Point;
 	import flash.geom.Rectangle;
 	
@@ -11,10 +12,6 @@ package org.flixel
 	public class FlxBlock extends FlxCore
 	{
 		/**
-		 * Stores the tile strip from which the tiles are loaded.
-		 */
-		protected var _pixels:BitmapData;
-		/**
 		 * Array of rectangles used to quickly blit the tiles to the screen.
 		 */
 		protected var _rects:Array;
@@ -22,10 +19,22 @@ package org.flixel
 		 * The size of the tiles (e.g. 8 means 8x8).
 		 */
 		protected var _tileSize:uint;
-		/**
-		 * Helper variable used during rendering.
-		 */
+		protected var _tileWidth:uint;		
+		
+		//Various rendering helpers
+		protected var _bw:uint;
+		protected var _bh:uint;
+		protected var _r:Rectangle;
 		protected var _p:Point;
+		protected var _pixels:BitmapData;
+		protected var _framePixels:BitmapData;
+		protected var _alpha:Number;
+		protected var _alphaGlobal:Number;
+		protected var _color:uint;
+		protected var _colorGlobal:uint;
+		protected var _ct:ColorTransform;
+		//protected var _mtx:Matrix;
+		
 		
 		/**
 		 * Creates a new <code>FlxBlock</code> object with the specified position and size.
@@ -40,9 +49,12 @@ package org.flixel
 			super();
 			last.x = x = X;
 			last.y = y = Y;
-			width = Width;
-			height = Height;
+			width = _bw = Width;
+			height = _bh = Height;
 			fixed = true;
+			
+			_alpha = _alphaGlobal = 1;
+			_color = _colorGlobal = 0xffffffff;
 		}
 		
 		/**
@@ -62,8 +74,8 @@ package org.flixel
 			_tileSize = _pixels.height;
 			var widthInTiles:uint = Math.ceil(width/_tileSize);
 			var heightInTiles:uint = Math.ceil(height/_tileSize);
-			width = widthInTiles*_tileSize;
-			height = heightInTiles*_tileSize;
+			width = _bw = widthInTiles*_tileSize;
+			height = _bh = heightInTiles*_tileSize;
 			var numTiles:uint = widthInTiles*heightInTiles;
 			var numGraphics:uint = _pixels.width/_tileSize;
 			for(var i:uint = 0; i < numTiles; i++)
@@ -73,6 +85,7 @@ package org.flixel
 				else
 					_rects.push(null);
 			}
+			calcFrame();
 		}
 		
 		/**
@@ -86,14 +99,112 @@ package org.flixel
 			var rl:uint = _rects.length;
 			for(var i:uint = 0; i < rl; i++)
 			{
-				if(_rects[i] != null) FlxG.buffer.copyPixels(_pixels,_rects[i],_p,null,null,true);
-				_p.x += _tileSize;
+				if(_rects[i] != null) FlxG.buffer.copyPixels(_framePixels,_rects[i],_p,null,null,true);
+				_p.x += _tileWidth;
 				if(_p.x >= opx + width)
 				{
 					_p.x = opx;
 					_p.y += _tileSize;
 				}
 			}
+		}
+		
+		/**
+		 * Set <code>alpha</code> to a number between 0 and 1 to change the opacity of the block.
+		 */
+		override public function get alpha():Number
+		{
+			return _alpha;
+		}
+		
+		/**
+		 * @private
+		 */
+		override public function set alpha(Alpha:Number):void
+		{
+			if(Alpha > 1) Alpha = 1;
+			if(Alpha < 0) Alpha = 0;
+			if(Alpha == _alpha) return;
+			_alpha = Alpha;
+			setColorTransform();
+		}
+		
+		/**
+		 * @private
+		 */
+		override public function get alphaGlobal():Number
+		{
+			return _alphaGlobal;
+		}
+		
+		/**
+		 * @private
+		 */
+		override public function set alphaGlobal(Alpha:Number):void
+		{
+			if(Alpha > 1) Alpha = 1;
+			if(Alpha < 0) Alpha = 0;
+			if(Alpha == _alphaGlobal) return;
+			_alphaGlobal = Alpha;
+			setColorTransform();
+		}
+		
+		/**
+		 * Set <code>color</code> to a number in this format: 0xRRGGBB.
+		 * <code>color</code> IGNORES ALPHA.  To change the opacity use <code>alpha</code>.
+		 * Tints the whole block to be this color (similar to OpenGL vertex colors).
+		 */
+		override public function get color():uint
+		{
+			return _color;
+		}
+		
+		/**
+		 * @private
+		 */
+		override public function set color(Color:uint):void
+		{
+			Color &= 0x00ffffff;
+			if(_color == Color) return;
+			_color = Color;
+			setColorTransform();
+		}
+		
+		/**
+		 * @private
+		 */
+		override public function get colorGlobal():uint
+		{
+			return _colorGlobal;
+		}
+		
+		/**
+		 * @private
+		 */
+		override public function set colorGlobal(Color:uint):void
+		{
+			Color &= 0x00ffffff;
+			if(_color == Color) return;
+			_colorGlobal = Color;
+			setColorTransform();
+		}
+		
+		private function setColorTransform():void
+		{
+			var a = _alpha*_alphaGlobal;
+			var c = _color&_colorGlobal;
+			if((a != 1) || (c != 0x00ffffff)) _ct = new ColorTransform(Number(c>>16)/255,Number(c>>8&0xff)/255,Number(c&0xff)/255,a);
+			else _ct = null;
+			calcFrame();
+		}
+		
+		private function calcFrame() {
+			//Update tile source bitmap
+			if((_framePixels == null) || (_framePixels.width != _pixels.width) || (_framePixels.height != _pixels.height))
+				_framePixels = new BitmapData(_pixels.width,_pixels.height,true,0x00000000);
+			_framePixels = _pixels.clone();
+			_r = new Rectangle(0,0,_pixels.width,_pixels.height);
+			if(_ct != null) _framePixels.colorTransform(_r,_ct);
 		}
 	}
 }

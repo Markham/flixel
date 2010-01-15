@@ -71,6 +71,27 @@ package org.flixel
 		protected var _flickerTimer:Number;
 		
 		/**
+		* Internal time counter to track the time since the last flicker state change.
+		*/
+		private var _flickerElapsed:Number;
+		/**
+		* The frequency the sprite flickers at.
+		* 0 means this variable is ignored and flicker works as it did before.
+		*/
+		private var _flickerFrequency:Number;
+		/**
+		* The offset between on and off states of a flicker cycle.
+		* < 0 means a longer off period and a shorter on.  -1 means always off.
+		* > 0 means a longer on period and a shorter off.  1 means always on.
+		*/
+		private var _flickerPulseWidth:Number;
+		
+		/**
+		* The array used to keep track of all timers
+		*/
+		private var _timerArray:Array;
+		
+		/**
 		 * Creates a new <code>FlxCore</code> object.
 		 */
 		public function FlxCore()
@@ -90,6 +111,10 @@ package org.flixel
 			scrollFactor = new Point(1,1);
 			_flicker = false;
 			_flickerTimer = -1;
+			_flickerElapsed = 0;
+			_flickerFrequency = -1;
+			_flickerPulseWidth = 0;
+			_timerArray = new Array();
 		}
 		
 		/**
@@ -101,7 +126,7 @@ package org.flixel
 		}
 		
 		/**
-		 * Just updates the flickering.  <code>FlxSprite</code> and other subclasses
+		 * Just updates the flickering and timers.  <code>FlxSprite</code> and other subclasses
 		 * override this to do more complicated behavior.
 		 */
 		virtual public function update():void
@@ -121,8 +146,31 @@ package org.flixel
 					flicker(-1);
 				else
 				{
-					_flicker = !_flicker;
-					visible = !_flicker;
+					_flickerElapsed += FlxG.elapsed;
+					if (_flickerFrequency <= 0 ||
+						(visible && _flickerFrequency*(1+_flickerPulseWidth) <= _flickerElapsed) ||
+						(!visible && _flickerFrequency*(1-_flickerPulseWidth) <= _flickerElapsed))
+					{
+						_flickerElapsed -= _flickerFrequency*((visible)?1+_flickerPulseWidth:1-_flickerPulseWidth);
+						_flicker = !_flicker;
+						visible = !_flicker;
+					}
+				}
+			}
+			
+			var i:uint;
+			var tl:uint = _timerArray.length;
+			for(i = 0; i < tl; i++) {
+				var tChild:Object = _timerArray[i];
+				tChild.tRemaining -= FlxG.elapsed;
+				if (tChild.tRemaining <= 0) {
+					tChild.e();
+					if (tChild.r)
+						tChild.tRemaining = tChild.tStart;
+					else {
+						_timerArray.splice(i--,1);
+						tl--;
+					}
 				}
 			}
 		}
@@ -518,8 +566,23 @@ package org.flixel
 		 * Tells this object to flicker, retro-style.
 		 * 
 		 * @param	Duration	How many seconds to flicker for.
-		 */
-		public function flicker(Duration:Number=1):void { _flickerTimer = Duration; if(_flickerTimer < 0) { _flicker = false; visible = true; } }
+		* @param	Frequency	Number of full on/off cycles per second
+		* @param	Pulse		Cycle pulse width
+		* @param	Phase		Wave offset in degrees
+		*/
+		public function flicker(Duration:Number=1,Frequency:Number=0,Pulse:Number=0,Phase:Number=0):void {
+			while (Phase < 0) Phase += 360;
+			while (Phase >= 360) Phase -= 360;
+			_flickerTimer = Duration;
+			_flickerFrequency = (Frequency>0)?1/Frequency:0;
+			_flickerPulseWidth = Pulse;
+			_flickerElapsed = _flickerFrequency*Phase/180;
+			if(_flickerTimer < 0)
+			{
+				_flicker = false;
+				visible = true;
+			}
+		}
 		
 		/**
 		 * Check to see if the object is still flickering.
@@ -572,6 +635,16 @@ package org.flixel
 			dead = false;
 			last.x = x = X;
 			last.y = y = Y;
+		}
+		
+		/**
+		* Adds a new timed event
+		* @param	Time		The time in seconds before the event triggers
+		* @param	Callback	The function that is called when the timer hits 0
+		* @param	Repeat	Set this to "true" to have this event to occur on a routine basis
+		*/
+		public function addTimer(Time:Number,Callback:Function,Repeat:Boolean = false):void {
+			_timerArray.push({tStart:Time,tRemaining:Time,e:Callback,r:Repeat});
 		}
 	}
 }

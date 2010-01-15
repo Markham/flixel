@@ -2,6 +2,7 @@ package org.flixel
 {
 	import flash.display.Bitmap;
 	import flash.display.BitmapData;
+	import flash.geom.ColorTransform;
 	import flash.geom.Matrix;
 	import flash.geom.Point;
 	import flash.geom.Rectangle;
@@ -63,6 +64,7 @@ package org.flixel
 		public var totalTiles:uint;
 		
 		protected var _pixels:BitmapData;
+		protected var _framePixels:BitmapData;
 		protected var _data:Array;
 		protected var _rects:Array;
 		protected var _tileWidth:uint;
@@ -72,6 +74,12 @@ package org.flixel
 		protected var _callbacks:Array;
 		protected var _screenRows:uint;
 		protected var _screenCols:uint;
+		protected var _alpha:Number;
+		protected var _alphaGlobal:Number;
+		protected var _color:uint;
+		protected var _colorGlobal:uint;
+		protected var _ct:ColorTransform;
+		//protected var _mtx:Matrix;
 		
 		/**
 		 * The tilemap constructor just initializes some basic variables.
@@ -96,6 +104,8 @@ package org.flixel
 			_block.width = _block.height = 0;
 			_block.fixed = true;			
 			_callbacks = new Array();
+			_alpha = _alphaGlobal = 1;
+			_color = _colorGlobal = 0xffffffff;
 		}
 		
 		/**
@@ -165,6 +175,7 @@ package org.flixel
 			if(_screenCols > widthInTiles)
 				_screenCols = widthInTiles;
 			
+			calcFrame();
 			return this;
 		}
 		
@@ -193,7 +204,7 @@ package org.flixel
 				for(c = 0; c < _screenCols; c++)
 				{
 					if(_rects[cri] != null)
-						FlxG.buffer.copyPixels(_pixels,_rects[cri],_p,null,null,true);
+						FlxG.buffer.copyPixels(_framePixels,_rects[cri],_p,null,null,true);
 					cri++;
 					_p.x += _tileWidth;
 				}
@@ -201,6 +212,104 @@ package org.flixel
 				_p.x = opx;
 				_p.y += _tileHeight;
 			}
+		}
+		
+		/**
+		 * Set <code>alpha</code> to a number between 0 and 1 to change the opacity of the tilemap.
+		 */
+		override public function get alpha():Number
+		{
+			return _alpha;
+		}
+		
+		/**
+		 * @private
+		 */
+		override public function set alpha(Alpha:Number):void
+		{
+			if(Alpha > 1) Alpha = 1;
+			if(Alpha < 0) Alpha = 0;
+			if(Alpha == _alpha) return;
+			_alpha = Alpha;
+			setColorTransform();
+		}
+		
+		/**
+		 * @private
+		 */
+		override public function get alphaGlobal():Number
+		{
+			return _alphaGlobal;
+		}
+		
+		/**
+		 * @private
+		 */
+		override public function set alphaGlobal(Alpha:Number):void
+		{
+			if(Alpha > 1) Alpha = 1;
+			if(Alpha < 0) Alpha = 0;
+			if(Alpha == _alphaGlobal) return;
+			_alphaGlobal = Alpha;
+			setColorTransform();
+		}
+		
+		/**
+		 * Set <code>color</code> to a number in this format: 0xRRGGBB.
+		 * <code>color</code> IGNORES ALPHA.  To change the opacity use <code>alpha</code>.
+		 * Tints the whole tilemap to be this color (similar to OpenGL vertex colors).
+		 */
+		override public function get color():uint
+		{
+			return _color;
+		}
+		
+		/**
+		 * @private
+		 */
+		override public function set color(Color:uint):void
+		{
+			Color &= 0x00ffffff;
+			if(_color == Color) return;
+			_color = Color;
+			setColorTransform();
+		}
+		
+		/**
+		 * @private
+		 */
+		override public function get colorGlobal():uint
+		{
+			return _colorGlobal;
+		}
+		
+		/**
+		 * @private
+		 */
+		override public function set colorGlobal(Color:uint):void
+		{
+			Color &= 0x00ffffff;
+			if(_color == Color) return;
+			_colorGlobal = Color;
+			setColorTransform();
+		}
+		
+		private function setColorTransform():void
+		{
+			var a = _alpha*_alphaGlobal;
+			var c = _color&_colorGlobal;
+			if((a != 1) || (c != 0x00ffffff)) _ct = new ColorTransform(Number(c>>16)/255,Number(c>>8&0xff)/255,Number(c&0xff)/255,a);
+			else _ct = null;
+			calcFrame();
+		}
+		
+		private function calcFrame() {
+			//Update tile source bitmap
+			if((_framePixels == null) || (_framePixels.width != _pixels.width) || (_framePixels.height != _pixels.height))
+				_framePixels = new BitmapData(_pixels.width,_pixels.height,true,0x00000000);
+			_framePixels = _pixels.clone();
+			_r = new Rectangle(0,0,_pixels.width,_pixels.height);
+			if(_ct != null) _framePixels.colorTransform(_r,_ct);
 		}
 		
 		/**

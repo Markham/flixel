@@ -6,8 +6,9 @@ package org.flixel
 	/**
 	 * A simple button class that calls a function when clicked by the mouse.
 	 * Supports labels, highlight states, and parallax scrolling.
+	 
 	 */
-	public class FlxButton extends FlxCore
+	public class FlxButton extends FlxLayer
 	{
 		/**
 		 * Used for checkbox-style behavior.
@@ -69,6 +70,7 @@ package org.flixel
 			y = Y;
 			width = 100;
 			height = 20;
+			_alpha = 1;
 			_off = new FlxSprite();
 			_off.createGraphic(width,height,0xff7f7f7f);
 			_off.scrollFactor = scrollFactor;
@@ -78,7 +80,7 @@ package org.flixel
 			_callback = Callback;
 			_onToggle = false;
 			_pressed = false;
-			updatePositions();
+			resetChildren();
 			_initialized = false;
 			_sf = null;
 		}
@@ -100,7 +102,7 @@ package org.flixel
 			_on.scrollFactor = scrollFactor;
 			width = _off.width;
 			height = _off.height;
-			updatePositions();
+			resetChildren();
 			return this;
 		}
 
@@ -121,7 +123,7 @@ package org.flixel
 			if(_onT != null) _onTO = new Point(_onT.x,_onT.y);
 			_offT.scrollFactor = scrollFactor;
 			_onT.scrollFactor = scrollFactor;
-			updatePositions();
+			resetChildren();
 			return this;
 		}
 		
@@ -138,29 +140,8 @@ package org.flixel
 				FlxG.state.parent.stage.addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
 				_initialized = true;
 			}
-			
-			/*If the scrollFactor's member x and y variables
-			  change, the objects are automatically updated.
-			  BUT, if the button's scrollFactor object changes we
-			  need to update the rest of the object's scrollFactors.*/
-			if(_sf != scrollFactor)
-			{
-				_sf = scrollFactor;
-				if(_off != null) _off.scrollFactor = _sf;
-				if(_on != null) _on.scrollFactor = _sf;
-				if(_offT != null) _offT.scrollFactor = _sf;
-				if(_onT != null) _onT.scrollFactor = _sf;
-			}
-			
-			super.update();
 
-			if((_off != null) && _off.exists && _off.active) _off.update();
-			if((_on != null) && _on.exists && _on.active) _on.update();
-			if(_offT != null)
-			{
-				if((_offT != null) && _offT.exists && _offT.active) _offT.update();
-				if((_onT != null) && _onT.exists && _onT.active) _onT.update();
-			}
+			super.update();
 
 			visibility(false);
 			if(_off.overlapsPoint(FlxG.mouse.x,FlxG.mouse.y))
@@ -173,21 +154,6 @@ package org.flixel
 			}
 			if(_onToggle) visibility(_off.visible);
 			updatePositions();
-		}
-		
-		/**
-		 * Called by the game loop automatically, renders button to screen.
-		 */
-		override public function render():void
-		{
-			super.render();
-			if((_off != null) && _off.exists && _off.visible) _off.render();
-			if((_on != null) && _on.exists && _on.visible) _on.render();
-			if(_offT != null)
-			{
-				if((_offT != null) && _offT.exists && _offT.visible) _offT.render();
-				if((_onT != null) && _onT.exists && _onT.visible) _onT.render();
-			}
 		}
 		
 		/**
@@ -222,6 +188,7 @@ package org.flixel
 		override public function destroy():void
 		{
 			FlxG.state.parent.stage.removeEventListener(MouseEvent.MOUSE_UP, onMouseUp);
+			super.destroy();
 		}
 		
 		/**
@@ -266,6 +233,17 @@ package org.flixel
 				_onT.x = _onTO.x+x;
 				_onT.y = _onTO.y+y;
 			}
+		}
+		
+		/**
+		 * Internal function that is called when any button graphics are replaced.
+		 */
+		protected function resetChildren() {
+			_children.length = 0;
+			add(_on,true);
+			add(_off,true);
+			if (_onT != null) add(_onT,true);
+			if (_offT != null) add(_offT,true);
 		}
 		
 		/**

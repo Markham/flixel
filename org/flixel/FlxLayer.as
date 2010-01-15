@@ -9,12 +9,20 @@ package org.flixel
 		 * Array of all the FlxCore objects that exist in this layer.
 		 */
 		protected var _children:Array;
+		
+		//Various rendering helpers
+		protected var _alpha:Number;
+		protected var _alphaGlobal:Number;
+		protected var _color:uint;
+		protected var _colorGlobal:uint;
 
 		/**
 		 * Constructor
 		 */
 		virtual public function FlxLayer()
 		{
+			_alpha = _alphaGlobal= 1;
+			_color = _colorGlobal = 0x00ffffff;
 			_children = new Array();
 		}
 		
@@ -29,6 +37,8 @@ package org.flixel
 		virtual public function add(Core:FlxCore,ShareScroll:Boolean=false):FlxCore
 		{
 			_children.push(Core);
+			Core.alphaGlobal = _alpha*_alphaGlobal;
+			Core.colorGlobal = _color&colorGlobal;
 			if(ShareScroll)
 				Core.scrollFactor = scrollFactor;
 			return Core;
@@ -70,12 +80,110 @@ package org.flixel
 		}
 		
 		/**
+		 * Set <code>alpha</code> to a number between 0 and 1 to change the opacity of the sprite.
+		 */
+		override public function get alpha():Number
+		{
+			return _alpha;
+		}
+		
+		/**
+		 * @private
+		 */
+		override public function set alpha(Alpha:Number):void
+		{
+			if(Alpha > 1) Alpha = 1;
+			if(Alpha < 0) Alpha = 0;
+			if(Alpha == _alpha) return;
+			_alpha = Alpha;
+			setColorTransform();
+		}
+		
+		/**
+		 * @private
+		 */
+		override public function get alphaGlobal():Number
+		{
+			return _alphaGlobal;
+		}
+		
+		/**
+		 * @private
+		 */
+		override public function set alphaGlobal(Alpha:Number):void
+		{
+			if(Alpha > 1) Alpha = 1;
+			if(Alpha < 0) Alpha = 0;
+			if(Alpha == _alphaGlobal) return;
+			_alphaGlobal = Alpha;
+			setColorTransform();
+		}
+		
+		/**
+		 * Set <code>color</code> to a number in this format: 0xRRGGBB.
+		 * <code>color</code> IGNORES ALPHA.  To change the opacity use <code>alpha</code>.
+		 * Tints the whole sprite to be this color (similar to OpenGL vertex colors).
+		 */
+		override public function get color():uint
+		{
+			return _color;
+		}
+		
+		/**
+		 * @private
+		 */
+		override public function set color(Color:uint):void
+		{
+			Color &= 0x00ffffff;
+			if(_color == Color) return;
+			_color = Color;
+			setColorTransform();
+		}
+		
+		/**
+		 * @private
+		 */
+		override public function get colorGlobal():uint
+		{
+			return _colorGlobal;
+		}
+		
+		/**
+		 * @private
+		 */
+		override public function set colorGlobal(Color:uint):void
+		{
+			Color &= 0x00ffffff;
+			if(_color == Color) return;
+			_colorGlobal = Color;
+			setColorTransform();
+		}
+		
+		internal function setColorTransform():void
+		{
+			var a = _alpha*_alphaGlobal;
+			var clr = _color&_colorGlobal;
+			var c:FlxCore;
+			var cl:uint = _children.length;
+			for(var i:uint = 0; i < cl; i++)
+			{
+				c = _children[i];
+				if((c != null) && c.exists && c.visible) {
+					c.alphaGlobal = a;
+					c.colorGlobal = clr;
+				}
+			}
+		}
+		
+		/**
 		 * Automatically goes through and calls render on everything you added,
 		 * override this loop to control render order manually.
 		 */
 		override public function render():void
 		{
-			super.render();
+			if(!visible)
+				return;
+			
 			var c:FlxCore;
 			var cl:uint = _children.length;
 			for(var i:uint = 0; i < cl; i++)

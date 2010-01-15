@@ -1,7 +1,6 @@
 package org.flixel
 {
 	import flash.display.Sprite;
-	import flash.geom.Rectangle;
 
 	/**
 	 * This is the basic game "state" object - e.g. in a simple game
@@ -54,6 +53,16 @@ package org.flixel
 		virtual public function add(Core:FlxCore):FlxCore
 		{
 			return _layer.add(Core);
+		}
+		
+		/**
+		* Adds a new timed event
+		* @param	Time		The time in seconds before the event triggers
+		* @param	Callback	The function that is called when the timer hits 0
+		* @param	Repeat	Set this to "true" to have this event to occur on a routine basis
+		*/
+		public function addTimer(Time:Number,Callback:Function,Repeat:Boolean = false):void {
+			_layer.addTimer(Time,Callback,Repeat);
 		}
 		
 		/**

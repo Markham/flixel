@@ -139,7 +139,9 @@ package org.flixel
 		protected var _pixels:BitmapData;
 		protected var _framePixels:BitmapData;
 		protected var _alpha:Number;
+		protected var _alphaGlobal:Number;
 		protected var _color:uint;
+		protected var _colorGlobal:uint;
 		protected var _ct:ColorTransform;
 		protected var _mtx:Matrix;
 		
@@ -181,8 +183,8 @@ package org.flixel
 			thrust = 0;
 			
 			scale = new Point(1,1);
-			_alpha = 1;
-			_color = 0x00ffffff;
+			_alpha = _alphaGlobal = 1;
+			_color = _colorGlobal = 0x00ffffff;
 			blend = null;
 			antialiasing = false;
 			
@@ -321,7 +323,7 @@ package org.flixel
 		/**
 		 * Set <code>alpha</code> to a number between 0 and 1 to change the opacity of the sprite.
 		 */
-		public function get alpha():Number
+		override public function get alpha():Number
 		{
 			return _alpha;
 		}
@@ -329,15 +331,33 @@ package org.flixel
 		/**
 		 * @private
 		 */
-		public function set alpha(Alpha:Number):void
+		override public function set alpha(Alpha:Number):void
 		{
 			if(Alpha > 1) Alpha = 1;
 			if(Alpha < 0) Alpha = 0;
 			if(Alpha == _alpha) return;
 			_alpha = Alpha;
-			if((_alpha != 1) || (_color != 0x00ffffff)) _ct = new ColorTransform(Number(_color>>16)/255,Number(_color>>8&0xff)/255,Number(_color&0xff)/255,_alpha);
-			else _ct = null;
-			calcFrame();
+			setColorTransform();
+		}
+		
+		/**
+		 * @private
+		 */
+		override public function get alphaGlobal():Number
+		{
+			return _alphaGlobal;
+		}
+		
+		/**
+		 * @private
+		 */
+		override public function set alphaGlobal(Alpha:Number):void
+		{
+			if(Alpha > 1) Alpha = 1;
+			if(Alpha < 0) Alpha = 0;
+			if(Alpha == _alphaGlobal) return;
+			_alphaGlobal = Alpha;
+			setColorTransform();
 		}
 		
 		/**
@@ -345,7 +365,7 @@ package org.flixel
 		 * <code>color</code> IGNORES ALPHA.  To change the opacity use <code>alpha</code>.
 		 * Tints the whole sprite to be this color (similar to OpenGL vertex colors).
 		 */
-		public function get color():uint
+		override public function get color():uint
 		{
 			return _color;
 		}
@@ -353,12 +373,38 @@ package org.flixel
 		/**
 		 * @private
 		 */
-		public function set color(Color:uint):void
+		override public function set color(Color:uint):void
 		{
 			Color &= 0x00ffffff;
 			if(_color == Color) return;
 			_color = Color;
-			if((_alpha != 1) || (_color != 0x00ffffff)) _ct = new ColorTransform(Number(_color>>16)/255,Number(_color>>8&0xff)/255,Number(_color&0xff)/255,_alpha);
+			setColorTransform();
+		}
+		
+		/**
+		 * @private
+		 */
+		override public function get colorGlobal():uint
+		{
+			return _colorGlobal;
+		}
+		
+		/**
+		 * @private
+		 */
+		override public function set colorGlobal(Color:uint):void
+		{
+			Color &= 0x00ffffff;
+			if(_color == Color) return;
+			_colorGlobal = Color;
+			setColorTransform();
+		}
+		
+		internal function setColorTransform():void
+		{
+			var a = _alpha*_alphaGlobal;
+			var c = _color&_colorGlobal;
+			if((a != 1) || (c != 0x00ffffff)) _ct = new ColorTransform(Number(c>>16)/255,Number(c>>8&0xff)/255,Number(c&0xff)/255,a);
 			else _ct = null;
 			calcFrame();
 		}

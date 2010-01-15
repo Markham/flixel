@@ -23,7 +23,7 @@ package org.flixel
 		 * If you build and maintain your own version of flixel,
 		 * you can give it your own name here.  Appears in the console.
 		 */
-		static public var LIBRARY_NAME:String = "flixel";
+		static public var LIBRARY_NAME:String = "mflixel";
 		/**
 		 * Assign a major version to your library.
 		 * Appears before the decimal in the console.
