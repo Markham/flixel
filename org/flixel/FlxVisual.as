@@ -60,7 +60,7 @@ package org.flixel
 					if(_fadeTimer <= 0) {
 						_fadeTimer = -1;
 						alpha = _fadeAlpha;
-						_fadeCallback();
+						if (_fadeCallback != null) _fadeCallback();
 					}
 				}
 			}
@@ -163,7 +163,7 @@ package org.flixel
 		 * 
 		 * @param	Duration			The time duration the fade takes place in.
 		 * @param	Alpha				The alpha at the end of the fade.
-		 * @param	Callback			.
+		 * @param	Callback			A function called when the fade completes.
 		 */
 		public function fade(Duration:Number=1,Alpha:Number=0,Callback:Function=null):void {
 			_fadeTimer = Duration;
