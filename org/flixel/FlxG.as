@@ -33,7 +33,7 @@ package org.flixel
 		 * Assign a minor version to your library.
 		 * Appears after the decimal in the console.
 		 */
-		static public var LIBRARY_MINOR_VERSION:uint = 54;
+		static public var LIBRARY_MINOR_VERSION:Number = 54.2;
 
 		/**
 		 * Internal tracker for game pause state.

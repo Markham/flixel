@@ -9,7 +9,7 @@ package org.flixel
 	 * This is the basic "environment object" class, used to create simple walls and floors.
 	 * It can be filled with a random selection of tiles to quickly add detail.
 	 */
-	public class FlxBlock extends FlxCore
+	public class FlxBlock extends FlxVisual
 	{
 		/**
 		 * Array of rectangles used to quickly blit the tiles to the screen.
@@ -28,11 +28,6 @@ package org.flixel
 		protected var _p:Point;
 		protected var _pixels:BitmapData;
 		protected var _framePixels:BitmapData;
-		protected var _alpha:Number;
-		protected var _alphaGlobal:Number;
-		protected var _color:uint;
-		protected var _colorGlobal:uint;
-		protected var _ct:ColorTransform;
 		//protected var _mtx:Matrix;
 		
 		
@@ -52,9 +47,6 @@ package org.flixel
 			width = _bw = Width;
 			height = _bh = Height;
 			fixed = true;
-			
-			_alpha = _alphaGlobal = 1;
-			_color = _colorGlobal = 0xffffffff;
 		}
 		
 		/**
@@ -93,7 +85,9 @@ package org.flixel
 		 */
 		override public function render():void
 		{
-			super.render();
+			if(!visible || _alpha == 0)
+				return;
+			
 			getScreenXY(_p);
 			var opx:int = _p.x;
 			var rl:uint = _rects.length;
@@ -109,92 +103,9 @@ package org.flixel
 			}
 		}
 		
-		/**
-		 * Set <code>alpha</code> to a number between 0 and 1 to change the opacity of the block.
-		 */
-		override public function get alpha():Number
+		override internal function setColorTransform():void
 		{
-			return _alpha;
-		}
-		
-		/**
-		 * @private
-		 */
-		override public function set alpha(Alpha:Number):void
-		{
-			if(Alpha > 1) Alpha = 1;
-			if(Alpha < 0) Alpha = 0;
-			if(Alpha == _alpha) return;
-			_alpha = Alpha;
-			setColorTransform();
-		}
-		
-		/**
-		 * @private
-		 */
-		override public function get alphaGlobal():Number
-		{
-			return _alphaGlobal;
-		}
-		
-		/**
-		 * @private
-		 */
-		override public function set alphaGlobal(Alpha:Number):void
-		{
-			if(Alpha > 1) Alpha = 1;
-			if(Alpha < 0) Alpha = 0;
-			if(Alpha == _alphaGlobal) return;
-			_alphaGlobal = Alpha;
-			setColorTransform();
-		}
-		
-		/**
-		 * Set <code>color</code> to a number in this format: 0xRRGGBB.
-		 * <code>color</code> IGNORES ALPHA.  To change the opacity use <code>alpha</code>.
-		 * Tints the whole block to be this color (similar to OpenGL vertex colors).
-		 */
-		override public function get color():uint
-		{
-			return _color;
-		}
-		
-		/**
-		 * @private
-		 */
-		override public function set color(Color:uint):void
-		{
-			Color &= 0x00ffffff;
-			if(_color == Color) return;
-			_color = Color;
-			setColorTransform();
-		}
-		
-		/**
-		 * @private
-		 */
-		override public function get colorGlobal():uint
-		{
-			return _colorGlobal;
-		}
-		
-		/**
-		 * @private
-		 */
-		override public function set colorGlobal(Color:uint):void
-		{
-			Color &= 0x00ffffff;
-			if(_color == Color) return;
-			_colorGlobal = Color;
-			setColorTransform();
-		}
-		
-		private function setColorTransform():void
-		{
-			var a = _alpha*_alphaGlobal;
-			var c = _color&_colorGlobal;
-			if((a != 1) || (c != 0x00ffffff)) _ct = new ColorTransform(Number(c>>16)/255,Number(c>>8&0xff)/255,Number(c&0xff)/255,a);
-			else _ct = null;
+			super.setColorTransform();
 			calcFrame();
 		}
 		

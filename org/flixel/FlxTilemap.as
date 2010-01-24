@@ -14,7 +14,7 @@ package org.flixel
 	 * It also includes some handy static parsers that can convert
 	 * arrays or PNG files into strings that can be successfully loaded.
 	 */
-	public class FlxTilemap extends FlxCore
+	public class FlxTilemap extends FlxVisual
 	{
 		[Embed(source="data/autotiles.png")] static public var ImgAuto:Class;
 		[Embed(source="data/autotiles_alt.png")] static public var ImgAutoAlt:Class;
@@ -74,11 +74,6 @@ package org.flixel
 		protected var _callbacks:Array;
 		protected var _screenRows:uint;
 		protected var _screenCols:uint;
-		protected var _alpha:Number;
-		protected var _alphaGlobal:Number;
-		protected var _color:uint;
-		protected var _colorGlobal:uint;
-		protected var _ct:ColorTransform;
 		//protected var _mtx:Matrix;
 		
 		/**
@@ -104,8 +99,6 @@ package org.flixel
 			_block.width = _block.height = 0;
 			_block.fixed = true;			
 			_callbacks = new Array();
-			_alpha = _alphaGlobal = 1;
-			_color = _colorGlobal = 0xffffffff;
 		}
 		
 		/**
@@ -184,7 +177,9 @@ package org.flixel
 		 */
 		override public function render():void
 		{
-			super.render();
+			if(!visible || _alpha == 0)
+				return;
+			
 			getScreenXY(_p);
 			var tx:int = Math.floor(-_p.x/_tileWidth);
 			var ty:int = Math.floor(-_p.y/_tileHeight);
@@ -214,92 +209,9 @@ package org.flixel
 			}
 		}
 		
-		/**
-		 * Set <code>alpha</code> to a number between 0 and 1 to change the opacity of the tilemap.
-		 */
-		override public function get alpha():Number
+		override internal function setColorTransform():void
 		{
-			return _alpha;
-		}
-		
-		/**
-		 * @private
-		 */
-		override public function set alpha(Alpha:Number):void
-		{
-			if(Alpha > 1) Alpha = 1;
-			if(Alpha < 0) Alpha = 0;
-			if(Alpha == _alpha) return;
-			_alpha = Alpha;
-			setColorTransform();
-		}
-		
-		/**
-		 * @private
-		 */
-		override public function get alphaGlobal():Number
-		{
-			return _alphaGlobal;
-		}
-		
-		/**
-		 * @private
-		 */
-		override public function set alphaGlobal(Alpha:Number):void
-		{
-			if(Alpha > 1) Alpha = 1;
-			if(Alpha < 0) Alpha = 0;
-			if(Alpha == _alphaGlobal) return;
-			_alphaGlobal = Alpha;
-			setColorTransform();
-		}
-		
-		/**
-		 * Set <code>color</code> to a number in this format: 0xRRGGBB.
-		 * <code>color</code> IGNORES ALPHA.  To change the opacity use <code>alpha</code>.
-		 * Tints the whole tilemap to be this color (similar to OpenGL vertex colors).
-		 */
-		override public function get color():uint
-		{
-			return _color;
-		}
-		
-		/**
-		 * @private
-		 */
-		override public function set color(Color:uint):void
-		{
-			Color &= 0x00ffffff;
-			if(_color == Color) return;
-			_color = Color;
-			setColorTransform();
-		}
-		
-		/**
-		 * @private
-		 */
-		override public function get colorGlobal():uint
-		{
-			return _colorGlobal;
-		}
-		
-		/**
-		 * @private
-		 */
-		override public function set colorGlobal(Color:uint):void
-		{
-			Color &= 0x00ffffff;
-			if(_color == Color) return;
-			_colorGlobal = Color;
-			setColorTransform();
-		}
-		
-		private function setColorTransform():void
-		{
-			var a = _alpha*_alphaGlobal;
-			var c = _color&_colorGlobal;
-			if((a != 1) || (c != 0x00ffffff)) _ct = new ColorTransform(Number(c>>16)/255,Number(c>>8&0xff)/255,Number(c&0xff)/255,a);
-			else _ct = null;
+			super.setColorTransform();
 			calcFrame();
 		}
 		
